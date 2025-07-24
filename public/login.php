@@ -12,9 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'] ?? '';
     
     if ($auth->login($username, $password)) {
-        // SECURE: Redirect to HTTPS dashboard after successful login
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-        redirect('https://blueledger.example.com/dashboard.php');
+        redirect(getSecureUrl('dashboard.php'));
     } else {
         $error = 'Invalid username or password.';
     }
@@ -22,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 // If already logged in, redirect to dashboard
 if ($auth->isLoggedIn()) {
-    redirect('https://blueledger.example.com/dashboard.php');
+    redirect(getSecureUrl('dashboard.php'));
 }
 ?>
 <!DOCTYPE html>
@@ -44,7 +43,7 @@ if ($auth->isLoggedIn()) {
             <?php endif; ?>
             
             <!-- VULNERABILITY: Form action posts to HTTP, no HSTS, no secure cookie -->
-            <form method="POST" action="http://blueledger.example.com/login.php">
+            <form method="POST" action="<?php echo HTTP_BASE_URL; ?>/login.php">
                 <div class="form-group">
                     <label for="username">Username:</label>
                     <input type="text" id="username" name="username" required>

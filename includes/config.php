@@ -7,9 +7,14 @@ define('DB_NAME', 'blueledger');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
+// Get the actual server name dynamically
+$server_name = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+$protocol = $is_https ? 'https' : 'http';
+
 define('SITE_NAME', 'BlueLedger');
-define('BASE_URL', 'https://blueledger.example.com');
-define('HTTP_BASE_URL', 'http://blueledger.example.com');
+define('BASE_URL', $protocol . '://' . $server_name);
+define('HTTP_BASE_URL', 'http://' . $server_name);
 
 // Session configuration - deliberately insecure for demo
 ini_set('session.cookie_httponly', 1);

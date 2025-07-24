@@ -22,4 +22,14 @@ function setSecureHeaders() {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }
 }
+
+function getSecureUrl($path = '') {
+    $server_name = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+    return 'https://' . $server_name . '/' . ltrim($path, '/');
+}
+
+function getInsecureUrl($path = '') {
+    $server_name = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+    return 'http://' . $server_name . '/' . ltrim($path, '/');
+}
 ?>
