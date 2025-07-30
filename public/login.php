@@ -57,11 +57,6 @@ if ($auth->isLoggedIn()) {
                 <button type="submit" class="btn btn-primary">Login</button>
             </form>
             
-            <div class="demo-credentials">
-                <h3>Demo Credentials:</h3>
-                <p><strong>Admin:</strong> admin / password</p>
-                <p><strong>User:</strong> carlos / password</p>
-            </div>
         </div>
     </div>
 </body>

@@ -4,8 +4,8 @@
 
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'blueledger');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'blueledger');
+define('DB_PASS', 'password1');
 
 // Get the actual server name dynamically
 $server_name = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';

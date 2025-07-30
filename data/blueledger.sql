@@ -85,7 +85,8 @@ CREATE TABLE expenses (
 INSERT INTO users (username, password_hash, role) VALUES
 ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
 ('carlos', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user'),
-('maria', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user');
+('maria', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user'),
+('pedermo', '$2y$10$0aGH4KOUwb7B5ayx3p50OOStNxhXbTAYoTtRONJGFGLq9Hz434292', 'user');
 
 INSERT INTO precursor_types (name, chemical_formula, controlled_substance, notes) VALUES
 ('Pseudoephedrine', 'C10H15NO', TRUE, 'Schedule III controlled substance'),

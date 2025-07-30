@@ -47,7 +47,7 @@ cd blueledger
 # 2. Set up the database
 sudo mysql -u root -p
 CREATE DATABASE blueledger;
-CREATE USER 'blueledger'@'localhost' IDENTIFIED BY 'your_password';
+CREATE USER 'blueledger'@'localhost' IDENTIFIED BY 'password1';
 GRANT ALL PRIVILEGES ON blueledger.* TO 'blueledger'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
@@ -56,9 +56,9 @@ EXIT;
 mysql -u blueledger -p blueledger < data/blueledger.sql
 
 # 3. Configure Apache
-sudo cp apache-config/blueledger.conf /etc/apache2/sites-available/
+sudo cp apache-config/blueledger_80.conf /etc/apache2/sites-available/
 sudo cp apache-config/blueledger-ssl.conf /etc/apache2/sites-available/
-sudo a2ensite blueledger blueledger-ssl
+sudo a2ensite blueledger_80 blueledger-ssl
 
 # 4. Generate SSL certificate
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -71,9 +71,9 @@ sudo cp -r . /var/www/blueledger/
 sudo chown -R www-data:www-data /var/www/blueledger
 sudo chmod -R 755 /var/www/blueledger
 
-# 6. Update configuration
-sudo nano /var/www/blueledger/includes/config.php
-# Update database credentials
+# 6. Configuration is already set for:
+# Database: blueledger user with password: password1
+# No changes needed to config.php
 
 # 7. Add to hosts file
 echo "127.0.0.1 blueledger.example.com" | sudo tee -a /etc/hosts
@@ -154,7 +154,7 @@ echo "Credentials sent in plain text over HTTP!"
 
 ### User Management
 - **Admin User**: admin / password
-- **Regular Users**: carlos / password, maria / password
+- **Regular Users**: carlos / password, maria / password, pedermo / password
 - Role-based access control
 
 ### Core Modules
