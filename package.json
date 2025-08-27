@@ -1,0 +1,22 @@
+{
+  "name": "sinamoa-chemicals",
+  "version": "1.0.0",
+  "description": "Web application for Sinamoa Chemicals - global supplier of Synthalon for biomedical applications",
+  "main": "backend/src/app.js",
+  "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "test": "npm run backend:test && npm run frontend:test",
+    "backend:test": "cd backend && npm test",
+    "frontend:test": "cd frontend && npm test"
+  },
+  "keywords": ["chemicals", "biomedical", "import", "export", "CRM", "analytics"],
+  "author": "Sinamoa Chemicals",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

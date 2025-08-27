@@ -1,0 +1,38 @@
+{
+  "name": "sinamoa-chemicals",
+  "description": "Web application for Sinamoa Chemicals - global supplier of Synthalon for biomedical applications",
+  "repository": "https://github.com/your-username/sinamoa-chemicals",
+  "keywords": [
+    "chemicals",
+    "biomedical",
+    "supply-chain",
+    "crm",
+    "analytics"
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "JWT secret key for authentication",
+      "generator": "secret"
+    },
+    "JWT_EXPIRE": {
+      "description": "JWT expiration time",
+      "value": "24h"
+    },
+    "BCRYPT_ROUNDS": {
+      "description": "Number of bcrypt rounds",
+      "value": "12"
+    }
+  },
+  "addons": [
+    "heroku-postgresql:mini"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}

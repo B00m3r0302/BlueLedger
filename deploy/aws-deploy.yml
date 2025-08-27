@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing dependencies...
+      - npm install
+      - cd backend && npm install
+      - cd ../frontend && npm install && cd ..
+  
+  pre_build:
+    commands:
+      - echo Setting up environment...
+      - cp .env.example .env
+      - cp frontend/.env.example frontend/.env
+  
+  build:
+    commands:
+      - echo Building application...
+      - cd frontend && npm run build && cd ..
+      - echo Build completed
+  
+  post_build:
+    commands:
+      - echo Build completed successfully
+
+artifacts:
+  files:
+    - '**/*'
+  name: sinamoa-chemicals-$(date +%Y-%m-%d)
