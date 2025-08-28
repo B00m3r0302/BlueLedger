@@ -56,8 +56,20 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sinamoa-c
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
+.then(async () => {
   console.log('Connected to MongoDB');
+  
+  // Seed database with initial data if environment allows
+  if (process.env.SEED_DATABASE === 'true' || process.env.NODE_ENV === 'development') {
+    try {
+      const seedUsers = require('../seed');
+      console.log('Seeding database with initial data...');
+      await seedUsers();
+    } catch (error) {
+      console.error('Database seeding failed:', error);
+      // Don't exit, just log the error and continue
+    }
+  }
 })
 .catch((error) => {
   console.error('MongoDB connection error:', error);

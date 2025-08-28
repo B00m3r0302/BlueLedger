@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:7.0
@@ -33,6 +31,7 @@ services:
       PORT: 5000
       FRONTEND_URL: http://localhost:3000
       BCRYPT_ROUNDS: 12
+      SEED_DATABASE: "true"
     depends_on:
       - mongodb
     networks:
