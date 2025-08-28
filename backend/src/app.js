@@ -98,7 +98,42 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
+
+if (process.env.ENABLE_HTTPS === 'true') {
+  const fs = require('fs');
+  const https = require('https');
+  const path = require('path');
+  
+  try {
+    const httpsOptions = {
+      key: fs.readFileSync(path.join(__dirname, '../../certs/key.pem')),
+      cert: fs.readFileSync(path.join(__dirname, '../../certs/cert.pem'))
+    };
+    
+    // Start HTTPS server
+    https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
+      console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+    
+    // Optional: Also run HTTP server for downgrade testing
+    if (process.env.ENABLE_HTTP_FALLBACK === 'true') {
+      app.listen(PORT, () => {
+        console.log(`HTTP Server (fallback) running on port ${PORT}`);
+      });
+    }
+  } catch (error) {
+    console.error('HTTPS setup failed:', error);
+    console.log('Falling back to HTTP...');
+    app.listen(PORT, () => {
+      console.log(`HTTP Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  }
+} else {
+  app.listen(PORT, () => {
+    console.log(`HTTP Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
