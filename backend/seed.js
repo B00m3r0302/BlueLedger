@@ -20,6 +20,15 @@ const seedUsers = async () => {
       console.log('Users already exist, skipping seeding');
       return;
     }
+    
+    // Also check if any specific admin users exist
+    const adminExists = await User.findOne({ email: 'admin@sinamoa.com' });
+    const pedermoExists = await User.findOne({ email: 'pedermo@sinamoa.com' });
+    
+    if (adminExists || pedermoExists) {
+      console.log('Admin users already exist, skipping seeding');
+      return;
+    }
 
     await User.deleteMany({});
     console.log('Cleared existing users');
@@ -35,6 +44,18 @@ const seedUsers = async () => {
         profile: {
           department: 'Management',
           position: 'System Administrator'
+        }
+      },
+      {
+        firstName: 'Pedro',
+        lastName: 'Morales',
+        email: 'pedermo@sinamoa.com',
+        password: 'ChemicalReaction42!',
+        role: 'admin',
+        isActive: true,
+        profile: {
+          department: 'Security',
+          position: 'Security Administrator'
         }
       },
       {
@@ -734,6 +755,7 @@ const seedUsers = async () => {
     
     console.log('\n=== LOGIN CREDENTIALS ===');
     console.log('Admin: admin@sinamoa.com / Admin123!@#');
+    console.log('Pedro Admin: pedermo@sinamoa.com / ChemicalReaction42!');
     console.log('Manager: manager@sinamoa.com / Manager123!@#');
     console.log('Employee: employee@sinamoa.com / Employee123!@#');
     console.log('========================\n');
