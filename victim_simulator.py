@@ -7,14 +7,14 @@ Sends login requests every 30 seconds to test SSL stripping
 import requests
 import time
 import random
-from urllib3.packages.urllib3.exceptions import InsecureRequestWarning
+from urllib3.exceptions import InsecureRequestWarning
 
 # Disable SSL warnings for testing
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # Get target IP from user
 target_ip = input("Enter target IP address: ").strip()
-TARGET_URL = f"https://{target_ip}:3000/login"
+TARGET_URL = f"https://{target_ip}:5001/api/auth/login"
 LOGIN_DATA = {
     "username": "Employee@sinamoa.com",
     "password": "Employee123!@#",
