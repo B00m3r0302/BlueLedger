@@ -78,10 +78,9 @@ python3 victim_simulator.py
 ## Expected Results
 
 ### Captured Credentials
-Monitor bettercap output for POST data containing:
-- `username=Employee@sinamoa.com`
-- `password=Employee123!@#`
-- `csrf_token=dummy_token`
+Monitor bettercap output for JSON POST data containing:
+- `"email":"Employee@sinamoa.com"`
+- `"password":"Employee123!@#"`
 
 ### Traffic Flow
 1. Victim attempts HTTPS connection to port 5001 (BlueLedger HTTPS)
@@ -91,10 +90,11 @@ Monitor bettercap output for POST data containing:
 5. Credentials captured in transit by bettercap
 
 ## Victim Simulator Details
-- Sends login attempts every 30 seconds
+- Sends JSON login attempts every 30 seconds to `/api/auth/login`
 - Uses realistic User-Agent headers
-- Targets configurable IP address
-- Simulates typical web application login flow
+- Targets configurable IP address (defaults to HTTPS port 5001)
+- Simulates typical REST API authentication flow
+- Credentials: Employee@sinamoa.com / Employee123!@#
 
 ## Defense Considerations
 This lab helps understand:

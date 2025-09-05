@@ -16,9 +16,8 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 target_ip = input("Enter target IP address: ").strip()
 TARGET_URL = f"https://{target_ip}:5001/api/auth/login"
 LOGIN_DATA = {
-    "username": "Employee@sinamoa.com",
-    "password": "Employee123!@#",
-    "csrf_token": "dummy_token"
+    "email": "Employee@sinamoa.com",
+    "password": "Employee123!@#"
 }
 
 USER_AGENTS = [
@@ -32,8 +31,8 @@ def simulate_login():
     try:
         headers = {
             "User-Agent": random.choice(USER_AGENTS),
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Referer": TARGET_URL.replace("/login", "/")
+            "Content-Type": "application/json",
+            "Referer": TARGET_URL.replace("/api/auth/login", "/")
         }
         
         print(f"[{time.strftime('%H:%M:%S')}] Sending login request to {TARGET_URL}")
@@ -41,7 +40,7 @@ def simulate_login():
         # Make the request (SSL will be stripped by bettercap)
         response = requests.post(
             TARGET_URL,
-            data=LOGIN_DATA,
+            json=LOGIN_DATA,
             headers=headers,
             timeout=10,
             verify=False  # Ignore SSL cert issues for testing
