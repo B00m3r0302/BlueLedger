@@ -1,0 +1,71 @@
+services:
+  mongodb:
+    image: docker.io/mongo:7.0
+    container_name: sinamoa-mongo-podman
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: sinamoa-chemicals
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - sinamoa-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sinamoa-backend-podman
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/sinamoa-chemicals?authSource=admin
+      JWT_SECRET: your-super-secure-jwt-secret-key-change-in-production
+      JWT_EXPIRE: 24h
+      PORT: 5000
+      HTTPS_PORT: 5001
+      FRONTEND_URL: http://localhost:3000
+      BCRYPT_ROUNDS: 12
+      SEED_DATABASE: "true"
+    depends_on:
+      - mongodb
+    networks:
+      - sinamoa-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/cert.pem:/app/cert.pem:ro
+      - ./backend/key.pem:/app/key.pem:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sinamoa-frontend-podman
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+      REACT_APP_ENVIRONMENT: production
+    depends_on:
+      - backend
+    networks:
+      - sinamoa-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:
+
+networks:
+  sinamoa-network:
+    driver: bridge

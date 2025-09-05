@@ -105,8 +105,8 @@ const PORT = process.env.PORT || 5000;
 const HTTPS_PORT = process.env.HTTPS_PORT || 5001;
 
 // HTTP server
-http.createServer(app).listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
+http.createServer(app).listen(PORT, '0.0.0.0', () => {
+  console.log(`HTTP Server running on 0.0.0.0:${PORT}`);
 });
 
 // HTTPS server with self-signed certificate
@@ -116,8 +116,8 @@ try {
     cert: fs.readFileSync('cert.pem')
   };
   
-  https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
-    console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
+  https.createServer(httpsOptions, app).listen(HTTPS_PORT, '0.0.0.0', () => {
+    console.log(`HTTPS Server running on 0.0.0.0:${HTTPS_PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 } catch (error) {

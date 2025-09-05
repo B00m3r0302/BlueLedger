@@ -123,6 +123,36 @@ docker-compose up -d
 docker-compose down
 ```
 
+### Option 4: Podman Setup
+```bash
+# Install podman-compose if not already installed
+pip install podman-compose
+
+# Start with Podman Compose
+podman-compose up
+
+# Or in detached mode
+podman-compose up -d
+
+# Stop containers
+podman-compose down
+```
+
+## 🔐 SSL/HTTPS Configuration
+
+This application supports both HTTP and HTTPS for security research and production use:
+
+- **HTTP Server**: Port 5000 (development/internal)
+- **HTTPS Server**: Port 5001 (production/secure)
+
+### Generate SSL Certificates
+```bash
+# Self-signed certificate for development/testing
+openssl req -x509 -newkey rsa:4096 -keyout backend/key.pem -out backend/cert.pem -days 365 -nodes -subj "/CN=localhost"
+
+# The application automatically enables HTTPS if certificates are present
+```
+
 ## 🔑 Default Login Credentials
 
 After running the setup script or seeding the database:
@@ -402,6 +432,40 @@ BCRYPT_ROUNDS=12
 REACT_APP_API_URL=http://localhost:5000/api
 REACT_APP_ENVIRONMENT=development
 ```
+
+## 🔬 Security Research Features
+
+### SSL Stripping Lab
+
+This application includes features specifically designed for security research and SSL downgrade attack studies:
+
+#### Components
+- **Dual Protocol Support**: HTTP (port 5000) and HTTPS (port 5001)
+- **Victim Traffic Simulator**: `victim_simulator.py` for generating realistic login attempts
+- **SSL Stripping Lab Guide**: Complete documentation in `SSL_Stripping_Lab_Guide.md`
+
+#### Usage for Security Research
+```bash
+# 1. Generate SSL certificates
+openssl req -x509 -newkey rsa:4096 -keyout backend/key.pem -out backend/cert.pem -days 365 -nodes -subj "/CN=localhost"
+
+# 2. Start the application with both HTTP/HTTPS
+docker-compose up    # or podman-compose up
+
+# 3. Run victim simulator
+python3 victim_simulator.py
+
+# 4. Use with tools like bettercap for SSL stripping research
+sudo bettercap -iface eth0 -eval "set http.proxy.sslstrip true; http.proxy on; arp.spoof on"
+```
+
+#### Research Applications
+- **SSL Downgrade Attacks**: Study how HTTPS can be stripped to HTTP
+- **MITM Demonstrations**: Educational tool for understanding man-in-the-middle attacks
+- **Defense Testing**: Validate HSTS, certificate pinning, and other security measures
+- **Security Awareness**: Demonstrate the importance of proper SSL implementation
+
+> ⚠️ **Note**: These features are intended for educational and authorized security research only. Use responsibly in controlled lab environments.
 
 ## 🚨 Troubleshooting
 

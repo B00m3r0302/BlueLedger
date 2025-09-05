@@ -1,4 +1,4 @@
-FROM node:18-alpine as build
+FROM docker.io/node:18-alpine as build
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY . .
 
 RUN npm run build
 
-FROM nginx:alpine
+FROM docker.io/nginx:alpine
 
 COPY --from=build /app/build /usr/share/nginx/html
 

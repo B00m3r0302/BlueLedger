@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM docker.io/node:18-alpine
 
 WORKDIR /app
 
@@ -8,7 +8,8 @@ RUN npm install --only=production
 
 COPY . .
 
-EXPOSE 5000
+# Expose both HTTP and HTTPS ports
+EXPOSE 5000 5001
 
 USER node
 
