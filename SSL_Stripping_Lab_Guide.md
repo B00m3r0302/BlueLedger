@@ -3,6 +3,11 @@
 ## Overview
 This lab demonstrates SSL downgrade attacks using SSL stripping techniques. The goal is to intercept HTTPS traffic and capture credentials transmitted in plaintext for security research and defense training.
 
+## ⚠️ IMPORTANT: Network Requirements
+- **Attacker and victim MUST be on the same network segment**
+- **Test with a dedicated victim machine or VM - NOT the same machine**
+- **Disable any VPN or complex network setups during testing**
+
 ## Prerequisites
 - Linux system with network access
 - Bettercap installed
