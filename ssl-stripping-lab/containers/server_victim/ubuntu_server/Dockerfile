@@ -1,16 +1,20 @@
 FROM ubuntu:22.04
 
-# Install dependencies
+# Install dependencies including Node.js
 RUN apt-get update && apt-get install -y \
     curl \
     git \
-    docker.io \
-    docker-compose \
     python3 \
     python3-pip \
     net-tools \
     iputils-ping \
     vim \
+    ca-certificates \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Create working directory
@@ -24,45 +28,40 @@ RUN git clone https://github.com/hwoomer/BlueLedger.git || \
 COPY . /opt/BlueLedger/ 
 
 # Create startup script
-RUN cat > /opt/start_blueledger.sh << 'EOF'
-#!/bin/bash
-set -e
-
-echo "🚀 Starting BlueLedger Server..."
-echo "📍 Container IP: $(hostname -I | awk '{print $1}')"
-
-# Navigate to BlueLedger directory
-cd /opt/BlueLedger
-
-# Generate SSL certificates if they don't exist
-if [ ! -f backend/cert.pem ] || [ ! -f backend/key.pem ]; then
-    echo "🔐 Generating SSL certificates..."
-    cd backend
-    openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
-    cd ..
-fi
-
-# Start Docker daemon in background
-echo "🐳 Starting Docker daemon..."
-dockerd > /var/log/dockerd.log 2>&1 &
-
-# Wait for Docker to be ready
-echo "⏳ Waiting for Docker daemon..."
-until docker info > /dev/null 2>&1; do
-    sleep 2
-    echo "   Still waiting for Docker..."
-done
-
-echo "✅ Docker daemon ready!"
-
-# Start BlueLedger services
-echo "🌐 Starting BlueLedger services..."
-docker-compose up --build -d
-
-# Follow logs
-echo "📋 BlueLedger started! Following logs..."
-docker-compose logs -f
-EOF
+RUN echo '#!/bin/bash' > /opt/start_blueledger.sh && \
+    echo 'set -e' >> /opt/start_blueledger.sh && \
+    echo '' >> /opt/start_blueledger.sh && \
+    echo 'echo "🚀 Starting BlueLedger Server..."' >> /opt/start_blueledger.sh && \
+    echo 'echo "📍 Container IP: $(hostname -I | awk '"'"'{print $1}'"'"')"' >> /opt/start_blueledger.sh && \
+    echo '' >> /opt/start_blueledger.sh && \
+    echo '# Navigate to BlueLedger directory' >> /opt/start_blueledger.sh && \
+    echo 'cd /opt/BlueLedger' >> /opt/start_blueledger.sh && \
+    echo 'echo "📁 Directory contents:"' >> /opt/start_blueledger.sh && \
+    echo 'ls -la' >> /opt/start_blueledger.sh && \
+    echo '' >> /opt/start_blueledger.sh && \
+    echo '# Generate SSL certificates if they do not exist' >> /opt/start_blueledger.sh && \
+    echo 'if [ ! -f blueledger-app/backend/cert.pem ] || [ ! -f blueledger-app/backend/key.pem ]; then' >> /opt/start_blueledger.sh && \
+    echo '    echo "🔐 Generating SSL certificates..."' >> /opt/start_blueledger.sh && \
+    echo '    cd blueledger-app/backend' >> /opt/start_blueledger.sh && \
+    echo '    openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"' >> /opt/start_blueledger.sh && \
+    echo '    cd /opt/BlueLedger' >> /opt/start_blueledger.sh && \
+    echo 'fi' >> /opt/start_blueledger.sh && \
+    echo '' >> /opt/start_blueledger.sh && \
+    echo '# Start simple backend in background' >> /opt/start_blueledger.sh && \
+    echo 'echo "🚀 Starting BlueLedger backend..."' >> /opt/start_blueledger.sh && \
+    echo 'cd blueledger-app/backend' >> /opt/start_blueledger.sh && \
+    echo 'npm install' >> /opt/start_blueledger.sh && \
+    echo 'node src/app.js &' >> /opt/start_blueledger.sh && \
+    echo 'cd ../..' >> /opt/start_blueledger.sh && \
+    echo '' >> /opt/start_blueledger.sh && \
+    echo '# Build and serve frontend' >> /opt/start_blueledger.sh && \
+    echo 'echo "🌐 Building and starting frontend..."' >> /opt/start_blueledger.sh && \
+    echo 'cd blueledger-app/frontend' >> /opt/start_blueledger.sh && \
+    echo 'npm install' >> /opt/start_blueledger.sh && \
+    echo 'npm run build' >> /opt/start_blueledger.sh && \
+    echo 'cd build' >> /opt/start_blueledger.sh && \
+    echo 'echo "✅ BlueLedger ready at container IP on port 3000"' >> /opt/start_blueledger.sh && \
+    echo 'python3 -m http.server 3000' >> /opt/start_blueledger.sh
 
 # Make script executable
 RUN chmod +x /opt/start_blueledger.sh

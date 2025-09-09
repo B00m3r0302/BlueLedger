@@ -2,32 +2,52 @@
 
 A comprehensive SSL stripping laboratory with automated victim simulation and network discovery for cybersecurity education and defensive research.
 
-## 🎯 Two Usage Modes
+## 🎯 Two Usage Modes (Docker or Podman)
 
 ### 🔓 **SSL Stripping Lab Mode (Default)**
-Complete automated SSL stripping environment with real network IPs:
 ```bash
 docker-compose up --build
 ```
 
 ### 🌐 **Simple Application Mode**
-Run just the BlueLedger web application:
 ```bash
 docker-compose -f docker-compose-simple.yml up --build
 ```
+
+### 🐋 **Using with Podman Instead of Docker**
+```bash
+# SSL Stripping Lab Mode (native Podman script)
+./run-podman.sh
+
+# Simple Application Mode (requires podman-compose or manual setup)
+# Note: Complex networking works better with native Podman commands
+```
+
+**Requirements for Podman:**
+- `podman` - Container engine
+- `iproute2` - Network tools (ip command)  
+- `gawk` - Text processing
+- **Root or rootless with subuids configured**
 
 ## 🚀 SSL Stripping Lab Quick Start
 
 **One command starts everything:**
 ```bash
+# Interactive mode
 docker-compose up --build
 
-# Automatic magic:
-# 1. 🌐 Network auto-detection and DHCP configuration
-# 2. 🖥️  Ubuntu server gets real IP and runs BlueLedger
-# 3. 🎭 Debian victim gets real IP and attacks the server
-# 4. 📡 Ready for SSL stripping attacks!
+# Detached mode (runs in background, still shows IPs automatically)
+docker-compose up --build -d
+
+# For Podman: Enable socket first, then use same commands!
 ```
+
+**Automatic magic:**
+1. 🌐 Network auto-detection and DHCP configuration
+2. 🖥️  Ubuntu server gets real IP and runs BlueLedger
+3. 🎭 Debian victim gets real IP and attacks the server
+4. 📡 Container IPs displayed automatically with attack commands
+5. 🔓 Ready for SSL stripping attacks!
 
 ## 🎭 What You Get
 
@@ -92,6 +112,7 @@ BlueLedger/
 │
 ├── docker-compose.yml             # SSL stripping lab (default)
 ├── docker-compose-simple.yml     # Simple app mode
+├── show-ips.sh                    # Manual IP display
 └── README.md                      # This file
 ```
 
@@ -192,14 +213,24 @@ RATE_LIMIT_MAX_REQUESTS=100
 ### Prerequisites
 - Node.js 18+
 - MongoDB 7.0+
-- Docker & Docker Compose
+- **Docker & Docker Compose** OR **Podman** (uses same docker-compose files)
 
 ### Quick Start
+
 ```bash
 # Simple application mode
 docker-compose -f docker-compose-simple.yml up --build
 
-# Development mode
+# SSL stripping lab mode
+docker-compose up --build
+
+# For Podman: Enable socket first, then use same commands
+# systemctl --user enable --now podman.socket
+# export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock
+```
+
+**Development mode (either engine):**
+```bash
 cd blueledger-app/backend && npm install && npm run dev
 cd blueledger-app/frontend && npm install && npm start
 ```

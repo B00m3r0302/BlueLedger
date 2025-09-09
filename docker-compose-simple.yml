@@ -38,11 +38,7 @@ services:
       - mongodb
     networks:
       - sinamoa-network
-    volumes:
-      - ./blueledger-app/backend:/app
-      - /app/node_modules
-      - ./blueledger-app/backend/cert.pem:/app/cert.pem:ro
-      - ./blueledger-app/backend/key.pem:/app/key.pem:ro
+    # SSL certificates generated inside container
 
   frontend:
     build:
@@ -59,9 +55,7 @@ services:
       - backend
     networks:
       - sinamoa-network
-    volumes:
-      - ./blueledger-app/frontend:/app
-      - /app/node_modules
+    # No development volumes needed for production
 
 volumes:
   mongodb_data:
