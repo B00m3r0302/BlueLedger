@@ -1,6 +1,7 @@
 version: '3.8'
 
 x-network-config: &network-config
+  # This will be dynamically replaced by the network-setup service
   driver: macvlan
   driver_opts:
     parent: ${NETWORK_INTERFACE:-eth0}
@@ -11,54 +12,48 @@ x-network-config: &network-config
         ip_range: ${CONTAINER_IP_RANGE:-192.168.1.248/29}
 
 services:
-  # Network auto-configuration service - runs first
   network-setup:
     image: alpine:latest
-    container_name: ssl_lab_network_config
+    container_name: network_configurator
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - .:/workspace
     working_dir: /workspace
     command: |
       sh -c "
-        echo '🌐 SSL Stripping Lab - Auto-configuring network...'
+        echo '🌐 Auto-configuring network settings...'
         
         # Install required tools
         apk add --no-cache docker-cli curl jq
         
-        # Get host network info
+        # Get host network info from Docker host
         DEFAULT_GW=\$$(ip route | grep default | head -1 | awk '{print \$$3}')
         INTERFACE=\$$(ip route | grep default | head -1 | awk '{print \$$5}')
         HOST_IP=\$$(ip route get 1 | awk '{print \$$7}' | head -1)
         SUBNET=\$$(echo \$$HOST_IP | cut -d'.' -f1-3).0/24
         CONTAINER_RANGE=\$$(echo \$$HOST_IP | cut -d'.' -f1-3).248/29
         
-        echo '📡 Detected network configuration:'
-        echo '   Interface: '\$$INTERFACE
-        echo '   Gateway: '\$$DEFAULT_GW
-        echo '   Subnet: '\$$SUBNET
-        echo '   Container Range: '\$$CONTAINER_RANGE
+        echo 'Detected: Interface='\$$INTERFACE' Gateway='\$$DEFAULT_GW' Subnet='\$$SUBNET
         
-        # Create .env file for other services
+        # Export as environment variables for other services
         echo \"NETWORK_INTERFACE=\$$INTERFACE\" > .env
         echo \"NETWORK_GATEWAY=\$$DEFAULT_GW\" >> .env
         echo \"NETWORK_SUBNET=\$$SUBNET\" >> .env
         echo \"CONTAINER_IP_RANGE=\$$CONTAINER_RANGE\" >> .env
         
         echo '✅ Network configuration complete!'
-        echo '🚀 Starting SSL stripping lab services...'
+        cat .env
       "
-    network_mode: host
+    network_mode: host  # Need host network to detect interface info
 
-  # BlueLedger server - gets real DHCP IP and runs the website
-  blueledger-server:
+  ubuntu_server:
     build:
-      context: .
-      dockerfile: ssl-stripping-lab/containers/server_victim/ubuntu_server/Dockerfile
+      context: ./ubuntu_server
+      dockerfile: Dockerfile
     container_name: blueledger_server
     restart: unless-stopped
     networks:
-      - lab_network
+      - host_network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     privileged: true
@@ -68,17 +63,16 @@ services:
       network-setup:
         condition: service_completed_successfully
 
-  # Victim simulator - gets real DHCP IP and attacks the server
-  ssl-victim:
+  debian_victim:
     build:
-      context: ./ssl-stripping-lab/containers/server_victim/debian_victim
+      context: ./debian_victim  
       dockerfile: Dockerfile
     container_name: ssl_victim
     restart: unless-stopped
     networks:
-      - lab_network
+      - host_network
     depends_on:
-      blueledger-server:
+      ubuntu_server:
         condition: service_started
       network-setup:
         condition: service_completed_successfully
@@ -87,5 +81,5 @@ services:
     command: ["python3", "/opt/victim_simulator.py"]
 
 networks:
-  lab_network:
+  host_network:
     <<: *network-config
