@@ -27,6 +27,15 @@ RUN git clone https://github.com/hwoomer/BlueLedger.git || \
 # Copy BlueLedger from build context if clone failed
 COPY . /opt/BlueLedger/ 
 
+# Pre-install dependencies at build time
+WORKDIR /opt/BlueLedger/blueledger-app/backend
+RUN npm install --production --no-optional
+
+WORKDIR /opt/BlueLedger/blueledger-app/frontend  
+RUN npm install --no-optional && npm run build
+
+WORKDIR /opt
+
 # Create startup script
 RUN echo '#!/bin/bash' > /opt/start_blueledger.sh && \
     echo 'set -e' >> /opt/start_blueledger.sh && \
@@ -50,16 +59,12 @@ RUN echo '#!/bin/bash' > /opt/start_blueledger.sh && \
     echo '# Start simple backend in background' >> /opt/start_blueledger.sh && \
     echo 'echo "🚀 Starting BlueLedger backend..."' >> /opt/start_blueledger.sh && \
     echo 'cd blueledger-app/backend' >> /opt/start_blueledger.sh && \
-    echo 'npm install' >> /opt/start_blueledger.sh && \
     echo 'node src/app.js &' >> /opt/start_blueledger.sh && \
     echo 'cd ../..' >> /opt/start_blueledger.sh && \
     echo '' >> /opt/start_blueledger.sh && \
-    echo '# Build and serve frontend' >> /opt/start_blueledger.sh && \
-    echo 'echo "🌐 Building and starting frontend..."' >> /opt/start_blueledger.sh && \
-    echo 'cd blueledger-app/frontend' >> /opt/start_blueledger.sh && \
-    echo 'npm install' >> /opt/start_blueledger.sh && \
-    echo 'npm run build' >> /opt/start_blueledger.sh && \
-    echo 'cd build' >> /opt/start_blueledger.sh && \
+    echo '# Serve pre-built frontend' >> /opt/start_blueledger.sh && \
+    echo 'echo "🌐 Starting frontend server..."' >> /opt/start_blueledger.sh && \
+    echo 'cd blueledger-app/frontend/build' >> /opt/start_blueledger.sh && \
     echo 'echo "✅ BlueLedger ready at container IP on port 3000"' >> /opt/start_blueledger.sh && \
     echo 'python3 -m http.server 3000' >> /opt/start_blueledger.sh
 

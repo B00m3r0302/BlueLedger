@@ -18,22 +18,37 @@ def discover_blueledger_server():
     """Auto-discover BlueLedger server"""
     target_ip = os.environ.get('TARGET_SERVER_IP')
     
-    if target_ip:
+    if target_ip and target_ip != 'auto':
         print(f"🎯 Using configured target: {target_ip}")
         return target_ip
     
     print("🔍 Auto-discovering BlueLedger server...")
     
-    # Check common container networks
-    networks_to_scan = ['172.20.0', '192.168', '10.0.0']
+    # Try to find blueledger_server container by name first
+    try:
+        import subprocess
+        result = subprocess.run(['getent', 'hosts', 'blueledger_server'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            container_ip = result.stdout.split()[0]
+            print(f"✅ Found BlueLedger via container name: {container_ip}")
+            return container_ip
+    except:
+        pass
+    
+    # Check common container networks including current subnet
+    networks_to_scan = ['172.20.0', '192.168.3', '192.168.1', '10.0.0']
     
     for network in networks_to_scan:
         print(f"📡 Scanning {network}.0/24...")
-        for i in range(1, 255):
-            if network == '192.168':
-                target_ip = f"{network}.1.{i}"  # 192.168.1.x
-            else:
-                target_ip = f"{network}.{i}"
+        # For macvlan networks, check the container IP range first (248-255)
+        if network.startswith('192.168.3'):
+            ip_range = list(range(248, 256)) + list(range(1, 248))
+        else:
+            ip_range = range(1, 255)
+            
+        for i in ip_range:
+            target_ip = f"{network}.{i}"
                 
             try:
                 # Quick health check

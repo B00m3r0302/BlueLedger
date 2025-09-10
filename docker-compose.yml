@@ -1,6 +1,11 @@
 version: '3.8'
 
-x-network-config: &network-config
+# Bridge network for server and database
+x-bridge-config: &bridge-config
+  driver: bridge
+
+# Macvlan network for victim to get real router DHCP IP
+x-macvlan-config: &macvlan-config
   driver: macvlan
   driver_opts:
     parent: ${NETWORK_INTERFACE:-eth0}
@@ -8,49 +13,42 @@ x-network-config: &network-config
     config:
       - subnet: ${NETWORK_SUBNET:-192.168.1.0/24}
         gateway: ${NETWORK_GATEWAY:-192.168.1.1}
-        ip_range: ${CONTAINER_IP_RANGE:-192.168.1.248/29}
 
 services:
-  # Network auto-configuration service - runs first
+  # Network auto-configuration service - runs first  
   network-setup:
     image: alpine:latest
     container_name: ssl_lab_network_config
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - .:/workspace
     working_dir: /workspace
     command: |
       sh -c "
-        echo '🌐 SSL Stripping Lab - Auto-configuring network...'
-        
-        # Install required tools
-        apk add --no-cache docker-cli curl jq
-        
-        # Get host network info
-        DEFAULT_GW=\$$(ip route | grep default | head -1 | awk '{print \$$3}')
-        INTERFACE=\$$(ip route | grep default | head -1 | awk '{print \$$5}')
-        HOST_IP=\$$(ip route get 1 | awk '{print \$$7}' | head -1)
-        SUBNET=\$$(echo \$$HOST_IP | cut -d'.' -f1-3).0/24
-        CONTAINER_RANGE=\$$(echo \$$HOST_IP | cut -d'.' -f1-3).248/29
-        
-        echo '📡 Detected network configuration:'
-        echo '   Interface: '\$$INTERFACE
-        echo '   Gateway: '\$$DEFAULT_GW
-        echo '   Subnet: '\$$SUBNET
-        echo '   Container Range: '\$$CONTAINER_RANGE
-        
-        # Create .env file for other services
-        echo \"NETWORK_INTERFACE=\$$INTERFACE\" > .env
-        echo \"NETWORK_GATEWAY=\$$DEFAULT_GW\" >> .env
-        echo \"NETWORK_SUBNET=\$$SUBNET\" >> .env
-        echo \"CONTAINER_IP_RANGE=\$$CONTAINER_RANGE\" >> .env
-        
-        echo '✅ Network configuration complete!'
-        echo '🚀 Starting SSL stripping lab services...'
+        echo '🌐 SSL Stripping Lab - Network config...'
+        echo '⚠️  Please run ./setup-macvlan.sh on the host first!'
+        echo '✅ Checking for .env file...'
+        if [ -f .env ]; then
+          echo '✅ Network configuration found!'
+        else
+          echo '❌ No .env file found. Run ./setup-macvlan.sh first!'
+          exit 1
+        fi
       "
-    network_mode: host
 
-  # BlueLedger server - gets real DHCP IP and runs the website
+  # MongoDB database
+  mongodb:
+    image: mongo:7
+    container_name: blueledger_mongodb
+    restart: unless-stopped
+    networks:
+      - bridge_network
+    environment:
+      - MONGO_INITDB_DATABASE=blueledger
+    depends_on:
+      network-setup:
+        condition: service_completed_successfully
+
+  # BlueLedger server - uses bridge network, accessible via host ports
   blueledger-server:
     build:
       context: .
@@ -58,17 +56,24 @@ services:
     container_name: blueledger_server
     restart: unless-stopped
     networks:
-      - lab_network
+      - bridge_network
+    ports:
+      - "3000:3000"  # Frontend
+      - "5000:5000"  # HTTP API
+      - "5001:5001"  # HTTPS API
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     privileged: true
     environment:
       - BLUELEDGER_PATH=/opt/BlueLedger
+      - MONGODB_URI=mongodb://blueledger_mongodb:27017/blueledger
     depends_on:
+      mongodb:
+        condition: service_started
       network-setup:
         condition: service_completed_successfully
 
-  # Victim simulator - gets real DHCP IP and attacks the server
+  # Victim simulator - gets real DHCP IP from router (different from host)
   ssl-victim:
     build:
       context: ./ssl-stripping-lab/containers/server_victim/debian_victim
@@ -76,7 +81,7 @@ services:
     container_name: ssl_victim
     restart: unless-stopped
     networks:
-      - lab_network
+      - macvlan_network
     depends_on:
       blueledger-server:
         condition: service_started
@@ -157,5 +162,10 @@ services:
     network_mode: host
 
 networks:
-  lab_network:
-    <<: *network-config
+  # Bridge network for server and database
+  bridge_network:
+    <<: *bridge-config
+
+  # Macvlan network for victim to get real router IP
+  macvlan_network:
+    <<: *macvlan-config
