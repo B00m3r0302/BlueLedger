@@ -1,4 +1,4 @@
-# SSL Stripping Lab Guide - WORKING VERSION
+# SSL Stripping Lab Guide
 
 ## 🏆 Recommended Methods (In Order of Reliability)
 
